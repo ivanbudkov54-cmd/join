@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Приглашение в напарники</title>
+<meta name="description" content="Тебя позвали в напарники. Держитесь вместе.">
+<meta property="og:title" content="Приглашение в напарники">
+<meta property="og:description" content="Тебя позвали в напарники. Держитесь вместе.">
+<meta name="theme-color" content="#0A0A0D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --obsidian: #0A0A0D;
+    --basalt: #141418;
+    --vein: #2C2C34;
+    --marble-high: #E4E7EF;
+    --marble: #B8BECD;
+    --ash: #7A7A87;
+    --gold: #F0BC4F;
+    --gold-light: #F7CF7C;
+    --gold-fill: linear-gradient(180deg, var(--gold-light), var(--gold));
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--obsidian); }
+  body {
+    min-height: 100dvh;
+    color: var(--marble);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: max(48px, env(safe-area-inset-top)) 20px max(32px, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 0%, rgba(240, 188, 79, 0.14), transparent 70%),
+      var(--obsidian);
+  }
+  main { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 22px; text-align: center; }
+  .eyebrow {
+    font: 600 11px/1 "Unbounded", sans-serif;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ash);
+  }
+  h1 {
+    font: 700 26px/1.2 "Unbounded", sans-serif;
+    color: var(--marble-high);
+    margin-top: -10px;
+  }
+  .note { color: var(--ash); }
+  .code {
+    background: var(--basalt);
+    border: 1px solid var(--vein);
+    border-radius: 20px;
+    padding: 28px 12px;
+    font: 700 40px/1 "Unbounded", sans-serif;
+    letter-spacing: 0.12em;
+    background-clip: padding-box;
+  }
+  .code span {
+    background: var(--gold-fill);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    height: 56px; border-radius: 999px;
+    font: 700 16px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: 0.06em;
+    text-decoration: none; cursor: pointer; border: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-gold {
+    background: var(--gold-fill);
+    color: #1A1405;
+    box-shadow: 0 4px 14px rgba(240, 188, 79, 0.28);
+  }
+  .btn-stone {
+    background: transparent;
+    color: var(--marble);
+    border: 1px solid var(--vein);
+  }
+  .actions { display: flex; flex-direction: column; gap: 12px; }
+  .help {
+    text-align: left;
+    background: var(--basalt);
+    border: 1px solid var(--vein);
+    border-radius: 18px;
+    padding: 16px;
+    font-size: 14px;
+  }
+  .help b { color: var(--marble-high); font-weight: 600; }
+  .help p + p { margin-top: 8px; }
+  .muted { color: var(--ash); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="invite" hidden>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <p class="eyebrow">приглашение</p>
+      <h1>Тебя зовут в&nbsp;напарники</h1>
+      <p class="note">Вы будете видеть счёт друг друга. Календарь и&nbsp;срывы останутся только у&nbsp;тебя.</p>
+
+      <div class="code"><span id="code-text"></span></div>
+
+      <div class="actions">
+        <a class="btn btn-gold" id="open-app">Открыть в приложении</a>
+        <button class="btn btn-stone" id="copy">Скопировать код</button>
+      </div>
+
+      <div class="help">
+        <p><b>Приложение ещё не установлено?</b></p>
+        <p>Установи его, открой раздел «Напарник» → «У меня есть код» и введи код выше.</p>
+        <p class="muted">Код одноразовый и скоро истечёт.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="broken" hidden>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <p class="eyebrow">приглашение</p>
+      <h1>Ссылка неполная</h1>
+      <p class="note">Попроси друга отправить приглашение ещё раз.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Тот же алфавит и длина, что у PartnerCode в приложении: без I, O, 0, 1.
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const LENGTH = 6;
+
+  const raw = new URLSearchParams(location.search).get("c") || "";
+  const code = [...raw.toUpperCase()].filter(ch => ALPHABET.includes(ch)).join("").slice(0, LENGTH);
+
+  if (code.length === LENGTH) {
+    document.getElementById("invite").hidden = false;
+    document.getElementById("code-text").textContent = code.slice(0, 3) + " " + code.slice(3);
+    // Без автоперехода при загрузке: если приложения нет, Safari покажет
+    // ошибку «адрес недействителен» — лучше дать человеку нажать самому.
+    document.getElementById("open-app").href = "nofap://join/" + code;
+
+    const copyButton = document.getElementById("copy");
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch {
+        const field = document.createElement("textarea");
+        field.value = code;
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
+      }
+      copyButton.textContent = "Скопировано";
+      setTimeout(() => { copyButton.textContent = "Скопировать код"; }, 1800);
+    });
+  } else {
+    document.getElementById("broken").hidden = false;
+  }
+</script>
+</body>
+</html>
