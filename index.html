@@ -106,8 +106,8 @@
   <section id="invite" hidden>
     <div style="display:flex;flex-direction:column;gap:22px">
       <p class="eyebrow">приглашение</p>
-      <h1>Тебя зовут в&nbsp;напарники</h1>
-      <p class="note">Вы будете видеть счёт друг друга. Календарь и&nbsp;срывы останутся только у&nbsp;тебя.</p>
+      <h1 id="title">Тебя зовут в&nbsp;напарники</h1>
+      <p class="note" id="note">Вы будете видеть счёт друг друга. Календарь и&nbsp;срывы останутся только у&nbsp;тебя.</p>
 
       <div class="code"><span id="code-text"></span></div>
 
@@ -118,8 +118,8 @@
 
       <div class="help">
         <p><b>Приложение ещё не установлено?</b></p>
-        <p>Установи его, открой раздел «Напарник» → «У меня есть код» и введи код выше.</p>
-        <p class="muted">Код одноразовый и скоро истечёт.</p>
+        <p id="howto">Установи его, открой раздел «Напарник» → «У меня есть код» и введи код выше.</p>
+        <p class="muted" id="expiry">Код одноразовый и скоро истечёт.</p>
       </div>
     </div>
   </section>
@@ -138,7 +138,10 @@
   const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const LENGTH = 6;
 
-  const raw = new URLSearchParams(location.search).get("c") || "";
+  // ?c= — напарник (nofap://join/КОД), ?s= — сквад (nofap://squad/КОД).
+  const params = new URLSearchParams(location.search);
+  const isSquad = !params.has("c") && params.has("s");
+  const raw = (isSquad ? params.get("s") : params.get("c")) || "";
   const code = [...raw.toUpperCase()].filter(ch => ALPHABET.includes(ch)).join("").slice(0, LENGTH);
 
   if (code.length === LENGTH) {
@@ -146,7 +149,15 @@
     document.getElementById("code-text").textContent = code.slice(0, 3) + " " + code.slice(3);
     // Без автоперехода при загрузке: если приложения нет, Safari покажет
     // ошибку «адрес недействителен» — лучше дать человеку нажать самому.
-    document.getElementById("open-app").href = "nofap://join/" + code;
+    document.getElementById("open-app").href = (isSquad ? "nofap://squad/" : "nofap://join/") + code;
+
+    if (isSquad) {
+      document.title = "Приглашение в сквад";
+      document.getElementById("title").innerHTML = "Тебя зовут в&nbsp;сквад";
+      document.getElementById("note").innerHTML = "До четырёх человек: видите дни друг друга и&nbsp;пишете в&nbsp;общий чат. Календарь и&nbsp;срывы останутся только у&nbsp;тебя.";
+      document.getElementById("howto").textContent = "Установи его, открой раздел «Напарник» → «Сквад» → «У меня есть код» и введи код выше.";
+      document.getElementById("expiry").textContent = "Код действует 24 часа.";
+    }
 
     const copyButton = document.getElementById("copy");
     copyButton.addEventListener("click", async () => {
