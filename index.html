@@ -142,6 +142,9 @@
   const params = new URLSearchParams(location.search);
   const isSquad = !params.has("c") && params.has("s");
   const raw = (isSquad ? params.get("s") : params.get("c")) || "";
+  // Прозвище пригласившего (и для напарника, и для сквада) — только как текст (textContent), чтобы ссылкой
+  // нельзя было подсунуть разметку. Та же обрезка, что в приложении.
+  const inviter = (params.get("n") || "").replace(/\s+/g, " ").trim().slice(0, 24);
   const code = [...raw.toUpperCase()].filter(ch => ALPHABET.includes(ch)).join("").slice(0, LENGTH);
 
   if (code.length === LENGTH) {
@@ -149,11 +152,18 @@
     document.getElementById("code-text").textContent = code.slice(0, 3) + " " + code.slice(3);
     // Без автоперехода при загрузке: если приложения нет, Safari покажет
     // ошибку «адрес недействителен» — лучше дать человеку нажать самому.
-    document.getElementById("open-app").href = (isSquad ? "nofap://squad/" : "nofap://join/") + code;
+    document.getElementById("open-app").href = (isSquad ? "nofap://squad/" : "nofap://join/") + code
+      + (inviter ? "?n=" + encodeURIComponent(inviter) : "");
+
+    if (inviter && !isSquad) {
+      document.getElementById("title").textContent = inviter + " зовёт тебя в\u00a0напарники";
+    }
 
     if (isSquad) {
       document.title = "Приглашение в сквад";
-      document.getElementById("title").innerHTML = "Тебя зовут в&nbsp;сквад";
+      document.getElementById("title").textContent = inviter
+        ? inviter + " зовёт тебя в\u00a0сквад"
+        : "Тебя зовут в\u00a0сквад";
       document.getElementById("note").innerHTML = "До четырёх человек: видите дни друг друга и&nbsp;пишете в&nbsp;общий чат. Календарь и&nbsp;срывы останутся только у&nbsp;тебя.";
       document.getElementById("howto").textContent = "Установи его, открой раздел «Напарник» → «Сквад» → «У меня есть код» и введи код выше.";
       document.getElementById("expiry").textContent = "Код действует 24 часа.";
